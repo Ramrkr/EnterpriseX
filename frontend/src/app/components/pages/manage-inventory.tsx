@@ -1,14 +1,28 @@
 import { Archive, ArrowLeft, ChevronDown, Plus, RotateCcw } from "lucide-react";
 import { StatusBar } from "./phone-frame";
+import { loadAppData } from "../loadAppData";
 
 export function ManageInventoryScreen({ onBack, onAdd, onRestock, onView }: {
   onBack: () => void; onAdd: () => void; onRestock: () => void; onView: () => void;
 }) {
+  
+  const { traders,products } = loadAppData();
   const options = [
     { label: "Add Product", desc: "Add a new product to the shared pool", icon: <Plus size={22} className="text-[#1B4FD8]" />, bg: "rgba(27,79,216,.08)", action: onAdd },
     { label: "Restock Goods", desc: "Add stock to existing products", icon: <RotateCcw size={22} className="text-emerald-600" />, bg: "rgba(16,185,129,.08)", action: onRestock },
     { label: "View Inventory", desc: "Browse and manage all stock", icon: <Archive size={22} className="text-[#F59E0B]" />, bg: "rgba(245,158,11,.08)", action: onView },
   ];
+  let totalNoOfUnits = 0;
+  // products.map(p=>{
+  //     totalNoOfUnits+=p.stock
+  //   });
+
+  products.forEach(p=> {
+    totalNoOfUnits+=p.stock
+  });
+    console.log(totalNoOfUnits);
+
+  
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
@@ -21,11 +35,11 @@ export function ManageInventoryScreen({ onBack, onAdd, onRestock, onView }: {
           <p className="text-blue-200/70 text-[10px] font-bold uppercase tracking-widest mb-1">Shared Pool</p>
           <p className="text-white font-extrabold text-base leading-snug">Centralized inventory for all wholesale & retail</p>
           <div className="flex gap-5 mt-3">
-            <div><p className="text-white font-extrabold text-lg">14</p><p className="text-blue-200/70 text-xs font-medium">Products</p></div>
+            <div><p className="text-white font-extrabold text-lg">{products.length}</p><p className="text-blue-200/70 text-xs font-medium">Products</p></div>
             <div className="w-px bg-white/15" />
-            <div><p className="text-white font-extrabold text-lg">4</p><p className="text-blue-200/70 text-xs font-medium">Traders</p></div>
+            <div><p className="text-white font-extrabold text-lg">{traders.length}</p><p className="text-blue-200/70 text-xs font-medium">Traders</p></div>
             <div className="w-px bg-white/15" />
-            <div><p className="text-white font-extrabold text-lg">3,608</p><p className="text-blue-200/70 text-xs font-medium">Units</p></div>
+            <div><p className="text-white font-extrabold text-lg">{totalNoOfUnits}</p><p className="text-blue-200/70 text-xs font-medium">Units in Stock</p></div>
           </div>
         </div>
         {options.map(o => (
