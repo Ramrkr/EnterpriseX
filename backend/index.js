@@ -143,7 +143,7 @@ app.get('/api/traders', async (_req, res) => {
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }S
+  }
 });
 
 app.get('/api/products', async (_req, res) => {
