@@ -38,7 +38,6 @@ export function loadAppData()
             }
         loadData();
         },[]);
-
-        return {traders,products,orders,customers,payments};
+        return {traders,products,orders,customers,payments,setTraders,setOrders,setProducts,setCustomers,setPayments};
 
 }
