@@ -53,3 +53,9 @@ export interface Product {
     mrp: number;
     stock: number;
 }
+
+export interface PaymentModalState {
+    orderId: string; total: number;
+    step: "choose" | "paid-method" | "partial-amount" | "credit-done";
+    method?: PaymentMethod; amountPaid?: string;
+}
