@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node index.js"
-  },
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No backend tests yet\" && exit 0"
+  }
+  ,
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
