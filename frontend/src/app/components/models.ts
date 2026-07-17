@@ -21,7 +21,11 @@ export interface Order {
     customerName: string;
     shopName: string;
     status: "pending" | "packed" | "delivered";
-    items: CartItem[]; total: number; date: string;
+    items: CartItem[];
+    total: number;
+    date: string;
+    payment:PaymentRecord;
+    
 }
 
 export interface CartItem {
@@ -55,7 +59,9 @@ export interface Product {
 }
 
 export interface PaymentModalState {
-    orderId: string; total: number;
+    orderId: string;
+    total: number;
     step: "choose" | "paid-method" | "partial-amount" | "credit-done";
-    method?: PaymentMethod; amountPaid?: string;
+    method?: PaymentMethod;
+    amountPaid?: string;
 }

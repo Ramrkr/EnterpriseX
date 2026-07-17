@@ -2,32 +2,31 @@ import { useState } from "react";
 import { api } from "../utility";
 import { StatusBar } from "./phone-frame";
 import { AlertCircle, Store } from "lucide-react";
+import { API } from "../../api/service";
+import { useNavigate } from "react-router";
 
-export function LoginScreen({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+export function LoginScreen() {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState("");
 
+  const navigate = useNavigate();
+
   async function handleLogin()
   {
     try{
-      console.log({username:u,password:p});
-      
-        const res = await api<{token:string}>('/log-in',
-          {
-            method:'POST',
-            body:JSON.stringify({username:u,password:p})
-          }
-        );
-        console.log(res);
-        localStorage.setItem('token',res.token);
-        console.log(localStorage.getItem('token'));
-        onLogin();
-    }
-    
-    catch(error:any)
+      const response = await API.post('/log-in',{username:u,password:p});
+      if(response.status === 200)
+      {
+        //localStorage.setItem('token',response.data?.token);
+        // onLogin();
+        navigate("/business-select");
+      }
+    }catch(err:any)
     {
-      setErr(error.message);
+      console.log(err);
+      setErr(err);
+      
     }
   }
 
@@ -64,7 +63,7 @@ export function LoginScreen({ onLogin, onRegister }: { onLogin: () => void; onRe
         </button>
         <div className="text-center">
           <span className="text-sm text-gray-400">New here? </span>
-          <button onClick={onRegister} className="text-sm text-[#1B4FD8] font-bold">Create account</button>
+          <button onClick={()=>navigate('register')} className="text-sm text-[#1B4FD8] font-bold">Create account</button>
         </div>
       </div>
     </div>

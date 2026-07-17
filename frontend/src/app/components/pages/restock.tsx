@@ -3,12 +3,17 @@ import { Product } from "../models";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, ChevronDown, Package } from "lucide-react";
 import { loadAppData } from "../loadAppData";
+import { useAppData } from "../useAppData";
+import { useRestockProducts } from "../../api/products";
+import { useNavigate } from "react-router";
 
-export function RestockGoodsScreen({ onBack, onSave }: {
-   onBack: () => void; onSave: (productId: string, qty: number) => void;
-}) {
+export function RestockGoodsScreen() {
 
-  const { traders,products } = loadAppData();
+
+  const {traders,products} = useAppData();
+  const restockProducts = useRestockProducts();
+  const navigate = useNavigate();
+
   const [traderFilter, setTraderFilter] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [form, setForm] = useState({ qty: "", batch: "", date: new Date().toISOString().slice(0, 10), description: "" });
@@ -17,11 +22,16 @@ export function RestockGoodsScreen({ onBack, onSave }: {
   const filteredProds = products.filter(p => !traderFilter || p.traderId === traderFilter);
 
 
+  const confirmRestock = (id:string,qty:number)=>{
+    restockProducts.mutate({id,qty});
+    navigate('/manage-inventory');
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
+        <button onClick={()=>navigate("/manage-inventory")} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
         <h1 className="text-base font-extrabold text-gray-800">Restock Goods</h1>
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
@@ -76,7 +86,8 @@ export function RestockGoodsScreen({ onBack, onSave }: {
             <input type={f.type} className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4FD8]/20" placeholder={f.ph} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
           </div>
         ))}
-        <button onClick={() => { if (selectedProduct && form.qty) { onSave(selectedProduct.id, Number(form.qty)); } }}
+        
+        <button onClick={() => { if (selectedProduct && form.qty) {confirmRestock(selectedProduct.id,Number(form.qty))}; }}
           className="w-full bg-emerald-600 text-white rounded-2xl py-3.5 font-bold text-sm mt-1" style={{ boxShadow: "0 8px 24px rgba(16,185,129,.3)" }}>
           Confirm Restock
         </button>

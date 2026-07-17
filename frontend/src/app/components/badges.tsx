@@ -1,6 +1,6 @@
 import { Order, PaymentRecord } from "./models";
 
-export function StatusBadge({ status }: { status: Order["status"] }) {
+export function StatusBadge({ status }: { status: Order["status"] }) {  
   const cfg = {
     pending: { label: "Pending", cls: "bg-amber-100 text-amber-700" },
     packed: { label: "Packed", cls: "bg-blue-100 text-blue-700" },

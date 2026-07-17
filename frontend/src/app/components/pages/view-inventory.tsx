@@ -2,20 +2,30 @@ import { useState } from "react";
 import { ArrowLeft, ChevronDown, Download, Edit, Eye, MoreVertical, Package, Search } from "lucide-react";
 import { StatusBar } from "./phone-frame";
 import { loadAppData } from "../loadAppData";
+import { useAppData } from "../useAppData";
+import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 
-export function ViewInventoryScreen({ onBack }: { onBack: () => void }) {
+export function ViewInventoryScreen() {
   const [traderFilter, setTraderFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [traderDrop, setTraderDrop] = useState(false);
 
-  const { traders,products } = loadAppData();
+  const { traders ,products } = useAppData();
+  const navigate = useNavigate();
+  const traderId = useSelector((state:RootState)=>state.trader.traderId);
 
   const filtered = products.filter(p => {
     const matchTrader = traderFilter === "all" || p.traderId === traderFilter || (traderFilter === "retail" && p.traderId === null);
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase());
     return matchTrader && matchSearch;
-  });  
+  });
+
+  const onBack =() =>{
+    traderId ? navigate(`/home/${traderId}`) : navigate('/home');
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]" onClick={() => setOpenMenu(null)}>

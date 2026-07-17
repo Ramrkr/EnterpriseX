@@ -4,28 +4,41 @@ import { Metric } from "../types";
 import { loadAppData } from "../loadAppData";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, ChevronDown, Hash, Layers, Package, Tag } from "lucide-react";
+import { useAppData } from "../useAppData";
+import { useAddProduct } from "../../api/products";
+import { useNavigate } from "react-router";
 
 export const METRIC_OPTIONS: { value: Metric; label: string }[] = [
   { value: "piece", label: "Piece" }, { value: "box", label: "Box" },
   { value: "kg", label: "Kg" }, { value: "litre", label: "Litre" }, { value: "packet", label: "Packet" },
 ];
 
-export function AddProductScreen({ onBack, onSave }: { onBack: () => void; onSave: (p: Omit<Product, "id">) => void }) {
+export function AddProductScreen() {
+
   const [form, setForm] = useState({ traderId: "" as string | null, company: "", name: "", sku: "", category: "", description: "", metric: "piece" as Metric, unitsPerBox: "", landingPrice: "", mrp: "", stock: "" });
   const [traderDrop, setTraderDrop] = useState(false);
-  const {traders}=loadAppData();
+  const { traders } = useAppData();
+  const addProduct = useAddProduct();
+
+  const navigate = useNavigate();
+
   const traderLabel = form.traderId === null ? "Retail (All)" : form.traderId ? traders.find(t => t.id === form.traderId)?.name || "" : "";
 
-  function handleSave() {
+  function handleSave(){
     if (!form.name || !form.sku || !form.mrp || !form.stock) return;
-    onSave({ traderId: form.traderId, company: form.company, name: form.name, sku: form.sku, category: form.category, description: form.description, metric: form.metric, unitsPerBox: form.metric === "box" && form.unitsPerBox ? Number(form.unitsPerBox) : undefined, landingPrice: Number(form.landingPrice), mrp: Number(form.mrp), stock: Number(form.stock) });
+    const payload : Omit<Product,'id'> = {traderId: form.traderId,
+      company: form.company, name: form.name, sku: form.sku, category: form.category, description: form.description,
+      metric: form.metric, unitsPerBox: form.metric === "box" && form.unitsPerBox ? Number(form.unitsPerBox) : undefined,
+      landingPrice: Number(form.landingPrice), mrp: Number(form.mrp), stock: Number(form.stock)}
+    addProduct.mutate(payload);
+    navigate('/manage-inventory');
   }
 
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
+        <button onClick={()=>navigate("/manage-inventory")} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
         <h1 className="text-base font-extrabold text-gray-800">Add Product</h1>
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>

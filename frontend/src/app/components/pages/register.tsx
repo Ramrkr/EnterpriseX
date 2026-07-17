@@ -2,41 +2,40 @@ import { useState } from "react";
 import { api } from "../utility";
 import { StatusBar } from "./phone-frame";
 import { AlertCircle, ArrowLeft, User } from "lucide-react";
+import { API } from "../../api/service";
+import { useNavigate } from "react-router";
 
-export function RegisterScreen({ onBack, onRegister }: { onBack: () => void; onRegister: () => void }) {
+export function RegisterScreen() {
   const [form, setForm] = useState({ name: "", password: "", confirm: "" });
   const [err, setErr] = useState("");
   const [msg,setMsg] = useState("");
 
+  const navigate = useNavigate();
+
   async function handleRegister()
   {
-    try{
-      console.log(form);
-      
-      const res = await api<{success:string,message:string}>('/register/new-user',
-      {
-        method:'POST',
-        body:JSON.stringify({username:form.name,password:form.password})
-      }
-    );
-    if(res.success)
+    try
     {
-      console.log(res);
-      setMsg(res.message);
-      onRegister();
+      const response = await API.post('/register/new-user',{username:form.name,password:form.password});
+      if(response.status === 200)
+      {
+        setMsg(response.data?.message);
+        navigate('/login');
+        // onRegister();
+      }
+    }catch(err:any)
+    {
+      console.log(err);
+      setErr(err);
+      
     }
-  }
-  catch(error:any)
-  {
-    setErr(error);
-  }
   }
 
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
       <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-white shadow-sm"><ArrowLeft size={17} className="text-gray-700" /></button>
+        <button onClick={()=>navigate('/login')} className="w-9 h-9 flex items-center justify-center rounded-full bg-white shadow-sm"><ArrowLeft size={17} className="text-gray-700" /></button>
         <h1 className="text-lg font-extrabold text-gray-800">Create Account</h1>
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-2 flex flex-col gap-5">
@@ -63,7 +62,7 @@ export function RegisterScreen({ onBack, onRegister }: { onBack: () => void; onR
         </button>
         <div className="text-center pb-4">
           <span className="text-sm text-gray-400">Already have an account? </span>
-          <button onClick={onBack} className="text-sm text-[#1B4FD8] font-bold">Sign In</button>
+          <button onClick={()=>navigate('/login')} className="text-sm text-[#1B4FD8] font-bold">Sign In</button>
         </div>
       </div>
     </div>
