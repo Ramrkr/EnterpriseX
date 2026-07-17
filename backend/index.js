@@ -247,15 +247,36 @@ app.delete('/api/customers/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 app.get('/api/orders', async (_req, res) => {
   try {
-    const { rows } = await query('SELECT * FROM orders ORDER BY order_date DESC, id DESC');
-    res.json(rows.map(normalizeOrder));
+    const { rows } = await query(`
+      SELECT 
+        o.id, o.mode, o.trader_id, o.customer_id, o.customer_name, 
+        o.shop_name, o.status AS order_status, o.items, o.total, o.order_date,
+        p.status AS payment_status, p.payment_method, p.amount_paid, p.is_credit
+      FROM orders o
+      LEFT JOIN payments p ON o.id = p.order_id
+      ORDER BY o.order_date DESC, o.id DESC
+    `);
+
+    res.json(rows.map(row => ({
+      ...normalizeOrder({
+        ...row,
+        status: row.order_status // pass the aliased order status
+      }),
+      payment: normalizePayment({
+        status: row.payment_status,
+        payment_method: row.payment_method,
+        amount_paid: row.amount_paid,
+        is_credit: row.is_credit
+      })
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 app.post('/api/orders', async (req, res) => {
   try {

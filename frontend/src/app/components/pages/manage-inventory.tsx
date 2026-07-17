@@ -1,22 +1,20 @@
 import { Archive, ArrowLeft, ChevronDown, Plus, RotateCcw } from "lucide-react";
 import { StatusBar } from "./phone-frame";
 import { loadAppData } from "../loadAppData";
+import { useAppData } from "../useAppData";
+import { useNavigate } from "react-router";
 
-export function ManageInventoryScreen({ onBack, onAdd, onRestock, onView }: {
-  onBack: () => void; onAdd: () => void; onRestock: () => void; onView: () => void;
-}) {
+export function ManageInventoryScreen() {
   
-  const { traders,products } = loadAppData();
+  const {traders,products} = useAppData();
+  const navigate = useNavigate();
   const options = [
-    { label: "Add Product", desc: "Add a new product to the shared pool", icon: <Plus size={22} className="text-[#1B4FD8]" />, bg: "rgba(27,79,216,.08)", action: onAdd },
-    { label: "Restock Goods", desc: "Add stock to existing products", icon: <RotateCcw size={22} className="text-emerald-600" />, bg: "rgba(16,185,129,.08)", action: onRestock },
-    { label: "View Inventory", desc: "Browse and manage all stock", icon: <Archive size={22} className="text-[#F59E0B]" />, bg: "rgba(245,158,11,.08)", action: onView },
+    { label: "Add Product", desc: "Add a new product to the shared pool", icon: <Plus size={22} className="text-[#1B4FD8]" />, bg: "rgba(27,79,216,.08)", action: ()=>navigate("/add-product") },
+    { label: "Restock Goods", desc: "Add stock to existing products", icon: <RotateCcw size={22} className="text-emerald-600" />, bg: "rgba(16,185,129,.08)", action: ()=>navigate("/restock-goods") },
+    { label: "View Inventory", desc: "Browse and manage all stock", icon: <Archive size={22} className="text-[#F59E0B]" />, bg: "rgba(245,158,11,.08)", action: ()=>navigate("/view-inventory") },
   ];
-  let totalNoOfUnits = 0;
-  // products.map(p=>{
-  //     totalNoOfUnits+=p.stock
-  //   });
 
+  let totalNoOfUnits = 0;
   products.forEach(p=> {
     totalNoOfUnits+=p.stock
   });
@@ -27,7 +25,7 @@ export function ManageInventoryScreen({ onBack, onAdd, onRestock, onView }: {
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
+        <button onClick={()=>navigate("/business-select")} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
         <h1 className="text-base font-extrabold text-gray-800">Manage Inventory</h1>
       </div>
       <div className="flex-1 px-5 py-5 flex flex-col gap-4">

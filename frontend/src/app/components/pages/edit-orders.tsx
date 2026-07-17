@@ -3,14 +3,29 @@ import { CartItem, Order, Product } from "../models";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Minus, Plus, Search, X } from "lucide-react";
 import { fmt } from "../utility";
+import { useAppData } from "../useAppData";
+import { AppMode } from "../types";
+import { useNavigate } from "react-router";
+import { useUpdateExistingOrder, useUpdateOrderStatus } from "../../api/orders";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 
-export function EditOrderScreen({ order, products, onBack, onSave }: {
-  order: Order; products: Product[]; onBack: () => void; onSave: (updated: Order) => void;
-}) {
-  const [items, setItems] = useState<CartItem[]>([...order.items]);
+export function EditOrderScreen() {
+
+    const { products} = useAppData();
+    const navigate = useNavigate();
+    const mode = useSelector((state:RootState)=>state.mode);
+    const order = useSelector((state:RootState)=>state.order.editingOrder);
+    const traderId =useSelector((state:RootState)=>state.trader.traderId);
+
+    const updateOrder = useUpdateExistingOrder();
+
+    const filteredProducts = mode === 'retail' ? products : products.filter(p=>p.traderId === traderId);
+
+  const [items, setItems] = useState<CartItem[]>([...order?.items ?? []]);
   const [productSearch, setProductSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const filteredProds = productSearch ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())) : [];
+  const filteredProds = productSearch ? filteredProducts?.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())) : [];
 
   function updateQty(idx: number, delta: number) { setItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(1, it.quantity + delta) } : it)); }
   function removeItem(idx: number) { setItems(prev => prev.filter((_, i) => i !== idx)); }
@@ -20,18 +35,30 @@ export function EditOrderScreen({ order, products, onBack, onSave }: {
   }
   const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
 
+  const onSaveChanges =(items:CartItem[],total:number)=>{
+            const ord = order;
+            if (!ord || !ord.id) return;
+            updateOrder.mutate({ ...ord, items, total ,status:'pending'});
+            navigate('/orders-list');
+
+  }
+
+  const onBack =()=>{
+    navigate("/orders-list")
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
       <div className="flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-100">
         <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
-        <h1 className="text-base font-extrabold text-gray-800">Edit · {order.id}</h1>
+        <h1 className="text-base font-extrabold text-gray-800">Edit · {order?.id}</h1>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3" style={{ scrollbarWidth: "none" }}>
         <div className="rounded-2xl p-4" style={{ background: "rgba(27,79,216,.06)" }}>
           <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(27,79,216,.6)" }}>Customer (non-editable)</p>
-          <p className="text-sm font-bold text-gray-800">{order.shopName}</p>
-          <p className="text-xs text-gray-500 font-medium">{order.customerName}</p>
+          <p className="text-sm font-bold text-gray-800">{order?.shopName}</p>
+          <p className="text-xs text-gray-500 font-medium">{order?.customerName}</p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
@@ -81,7 +108,13 @@ export function EditOrderScreen({ order, products, onBack, onSave }: {
         </div>
       </div>
       <div className="px-4 py-3 bg-white border-t border-gray-100">
-        <button onClick={() => onSave({ ...order, items, total })} className="w-full bg-[#1B4FD8] text-white rounded-2xl py-3.5 font-bold text-sm" style={{ boxShadow: "0 8px 24px rgba(27,79,216,.3)" }}>Save Changes</button>
+        <button
+          onClick={() => onSaveChanges(items, total)}
+          className="w-full bg-[#1B4FD8] text-white rounded-2xl py-3.5 font-bold text-sm"
+          style={{ boxShadow: "0 8px 24px rgba(27,79,216,.3)" }}
+        >
+          Save Changes
+        </button>
       </div>
     </div>
   );

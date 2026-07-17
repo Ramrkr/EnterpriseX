@@ -1,8 +1,19 @@
 import { Store } from "lucide-react";
 import { useEffect } from "react";
+import { useNavigate } from "react-router";
 
-export function SplashScreen({ onComplete }: { onComplete: () => void }) {
-  useEffect(() => { const t = setTimeout(onComplete, 2400); return () => clearTimeout(t); }, [onComplete]);
+// export function SplashScreen({ onComplete }: { onComplete: () => void }) {
+export function SplashScreen() {
+
+  // useEffect(() => { const t = setTimeout(onComplete, 2400); return () => clearTimeout(t); }, [onComplete]);
+
+  const navigate = useNavigate();
+  useEffect(()=>{
+    const t = setTimeout(()=>
+    {
+      navigate('/login');
+    },2400)
+  },[]);
   return (
     <div className="flex flex-col items-center justify-center h-full bg-gradient-to-b from-[#1B4FD8] to-[#0f2d8a] relative overflow-hidden">
       <div className="absolute w-64 h-64 rounded-full border border-white/5" />

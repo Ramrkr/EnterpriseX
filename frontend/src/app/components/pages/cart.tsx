@@ -4,18 +4,42 @@ import { AppMode } from "../types";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Minus, Plus } from "lucide-react";
 import { fmt } from "../utility";
+import { useAppData } from "../useAppData";
+import { useAddOrder } from "../../api/orders";
+import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
+import { setSelectedOrder } from "../../redux/slices/orderSlice";
 
-export function CartScreen({ cart, customerId, customers, mode, traderId, onBack, onConfirm }: {
-  cart: CartItem[]; customerId: string; customers: Customer[];
-  mode: AppMode; traderId: string; onBack: () => void;
-  onConfirm: (o: Omit<Order, "id" | "date">) => void;
-}) {
+export function CartScreen() {
+
+  const {customers} = useAppData();
+
+  const addOrder = useAddOrder();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const mode = useSelector((state:RootState)=>state.mode);
+  const traderId =useSelector((state:RootState)=>state.trader.traderId);
+  const cart = useSelector((state:RootState)=>state.cart.items);
+  const customerId = useSelector((state:RootState)=>state.cart.customerId);
+
   const customer = customers.find(c => c.id === customerId)!;
   const [items, setItems] = useState<CartItem[]>([...cart]);
 
   function updPrice(idx: number, price: number) { setItems(prev => prev.map((it, i) => i === idx ? { ...it, price } : it)); }
   function updQty(idx: number, qty: number) { setItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(1, qty) } : it)); }
   const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
+
+
+  const onConfirmOrder=(order:Omit<Order,'id'>)=>{
+    addOrder.mutate(order);
+    navigate('/order-confirm');
+  }
+
+  const onBack =()=>{
+    navigate('/add-order');
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
@@ -78,7 +102,14 @@ export function CartScreen({ cart, customerId, customers, mode, traderId, onBack
         </div>
       </div>
       <div className="px-4 py-3 bg-white border-t border-gray-100">
-        <button onClick={() => onConfirm({ mode, traderId: mode === "wholesale" ? traderId : undefined, customerId: customer.id, customerName: customer.customerName, shopName: customer.shopName, status: "pending", items, total })}
+        <button onClick={() =>{
+          
+          const payload:Omit<Order,'id'> = { mode, traderId: mode === "wholesale" ? traderId : "retail", customerId: customer.id, customerName: customer.customerName, shopName: customer.shopName, status: "pending" , items, total,date: new Date().toISOString().slice(0, 10), payment: { status: 'unpaid', amountPaid: 0  }};
+          //addOrder.mutate({ mode, traderId: mode === "wholesale" ? traderId : "retail", customerId: customer.id, customerName: customer.customerName, shopName: customer.shopName, status: "pending", items, total,date: new Date().toISOString().slice(0, 10), payment: { status: 'unpaid', amountPaid: 0  }});
+          //onConfirmOrder({ mode, traderId: mode === "wholesale" ? traderId : "retail", customerId: customer.id, customerName: customer.customerName, shopName: customer.shopName, status: "pending", items, total,date: new Date().toISOString().slice(0, 10), payment: { status: 'unpaid', amountPaid: 0  }});
+          onConfirmOrder(payload);
+          }
+        }
           className="w-full bg-[#1B4FD8] text-white rounded-2xl py-3.5 font-extrabold text-sm" style={{ boxShadow: "0 8px 24px rgba(27,79,216,.35)" }}>
           Confirm Order
         </button>

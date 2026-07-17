@@ -1,16 +1,29 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Order } from "../models";
 import { AppMode } from "../types";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Check, ClipboardList, Download, Edit, Eye, MoreVertical, Plus, Search, Trash2, X } from "lucide-react";
 import { StatusBadge } from "../badges";
-import { fmt } from "../utility";
+import { api, fmt } from "../utility";
+import { loadAppData } from "../loadAppData";
+import { useAddOrder, useDeleteOrders, useOrders, useUpdateOrderStatus } from "../../api/orders";
+import { useAppData } from "../useAppData";
+import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
+import { setCart } from "../../redux/slices/cartSlice";
+import { setEditingOrder, setViewingOrder } from "../../redux/slices/orderSlice";
 
-export function OrdersListScreen({ orders, mode, traderId, onBack, onAdd, onView, onEdit, onDelete, onUpdateStatus }: {
-  orders: Order[]; mode: AppMode; traderId: string; onBack: () => void; onAdd: () => void;
-  onView: (o: Order) => void; onEdit: (o: Order) => void;
-  onDelete: (id: string) => void; onUpdateStatus: (id: string, s: Order["status"]) => void;
-}) {
+export function OrdersListScreen() {
+
+    const {orders} = useAppData();
+    const addOrders = useAddOrder();
+    const updateOrders = useUpdateOrderStatus();
+    const deleteOrders = useDeleteOrders();
+    const navigate = useNavigate();
+    const mode = useSelector((state:RootState)=>state.mode);
+    const traderId = useSelector((state:RootState)=>state.trader.traderId);
+
   const [search, setSearch] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -25,7 +38,35 @@ export function OrdersListScreen({ orders, mode, traderId, onBack, onAdd, onView
   function startLong(id: string) { timerRef.current = setTimeout(() => { setSelectMode(true); setSelected(new Set([id])); }, 650); }
   function endLong() { if (timerRef.current) clearTimeout(timerRef.current); }
   function toggleSelect(id: string) { setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); }
-  function applyStatus(s: Order["status"]) { selected.forEach(id => onUpdateStatus(id, s)); setSelected(new Set()); setSelectMode(false); }
+
+  function applyStatus(status: Order["status"])
+  {
+    selected.forEach(id => updateOrders.mutate({ id, status }));
+    //selected.forEach(id => onUpdateStatus(id, s));
+    setSelected(new Set());
+    setSelectMode(false);
+  }
+
+  const dispatch = useDispatch();
+
+  const onAddNewOrder =() =>{
+    dispatch(setCart([]));
+    navigate('/add-order');
+  }
+
+  const onViewOrder = (order:Order)=>{
+    dispatch(setViewingOrder(order));
+    navigate(`/view-order/${order.id}`);
+  }
+
+  const onEditOrder = (order:Order)=>{
+    dispatch(setEditingOrder(order));
+    navigate(`/edit-order/${order.id}`);
+  }
+
+  const onBack =()=>{
+    navigate('/home');
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]" onClick={() => setOpenMenu(null)}>
@@ -35,7 +76,7 @@ export function OrdersListScreen({ orders, mode, traderId, onBack, onAdd, onView
           <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
           <h1 className="text-base font-extrabold text-gray-800">Manage Orders</h1>
         </div>
-        <button onClick={onAdd} className="w-9 h-9 flex items-center justify-center rounded-full bg-[#1B4FD8]"><Plus size={15} className="text-white" /></button>
+        <button onClick={onAddNewOrder} className="w-9 h-9 flex items-center justify-center rounded-full bg-[#1B4FD8]"><Plus size={15} className="text-white" /></button>
       </div>
       <div className="px-4 py-2 bg-white border-b border-gray-100">
         <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
@@ -77,7 +118,7 @@ export function OrdersListScreen({ orders, mode, traderId, onBack, onAdd, onView
             {!selectMode && <button onClick={e => { e.stopPropagation(); setOpenMenu(openMenu === o.id ? null : o.id); }} className="w-8 h-8 flex items-center justify-center"><MoreVertical size={15} className="text-gray-300" /></button>}
             {openMenu === o.id && (
               <div className="absolute right-4 top-12 bg-white border border-gray-100 rounded-2xl shadow-2xl z-30 overflow-hidden w-44">
-                {[{ label: "View Details", icon: <Eye size={13} />, action: () => { onView(o); setOpenMenu(null); } }, { label: "Edit Order", icon: <Edit size={13} />, action: () => { onEdit(o); setOpenMenu(null); } }, { label: "Download Invoice", icon: <Download size={13} />, action: () => setOpenMenu(null) }, { label: "Delete", icon: <Trash2 size={13} />, action: () => { onDelete(o.id); setOpenMenu(null); }, danger: true }].map(item => (
+                {[{ label: "View Details", icon: <Eye size={13} />, action: () => { onViewOrder(o); setOpenMenu(null); } }, { label: "Edit Order", icon: <Edit size={13} />, action: () => { onEditOrder(o); setOpenMenu(null); } }, { label: "Download Invoice", icon: <Download size={13} />, action: () => setOpenMenu(null) }, { label: "Delete", icon: <Trash2 size={13} />, action: () => { deleteOrders.mutate(o.id); setOpenMenu(null); }, danger: true }].map(item => (
                   <button key={item.label} onClick={item.action} className={`w-full flex items-center gap-3 px-4 py-3 text-sm border-b border-gray-50 last:border-0 font-medium ${(item as any).danger ? "text-red-500" : "text-gray-700"}`}>{item.icon}{item.label}</button>
                 ))}
               </div>

@@ -5,28 +5,35 @@ import { ArrowLeftRight, BarChart2, Bell, ClipboardList, Gift, Menu, Package, Re
 import { StatusBar } from "./phone-frame";
 import { AppMode } from "../types";
 import { CATEGORIES, SCHEMES } from "../mock-data";
+import { useAppData } from "../useAppData";
+import { useNavigate, useParams } from "react-router";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 
-export function HomeScreen({ mode, traderId, onOrders, onTransactions, onInventory, onSwitch, onSalesReport, onProfile }: {
-  mode: AppMode; traderId: string;
-  onOrders: () => void; onTransactions: () => void; onInventory: () => void;
-  onSwitch: () => void; onSalesReport: () => void; onProfile: () => void;
-}) {
+export function HomeScreen(){
+
   const [drawer, setDrawer] = useState(false);
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
 
-  const { traders,products } = loadAppData();
+  const mode = useSelector((state:RootState)=>state.mode);
 
-  const trader = traders.find(t => t.id === traderId);
+  // const traderId = useSelector((state:RootState)=>state.trader.traderId);
+
+  const { traderId } = useParams();
+
+  const {traders,products} = useAppData();
+  const navigate = useNavigate();
+  const trader = traderId ? traders.find(t => t.id === traderId) : null ;
   const visibleProducts = mode === "retail" ? products : products.filter(p => p.traderId === traderId);
   const filtered = visibleProducts.filter(p => (category === "All" || p.category === category) && (!search || p.name.toLowerCase().includes(search.toLowerCase())));
   const isRetail = mode === "retail";
   const accentBg = isRetail ? "bg-[#F59E0B]" : "bg-[#1B4FD8]";
   const navItems = [
-    { label: "Orders", icon: <ClipboardList size={20} />, action: onOrders },
-    { label: "Transactions", icon: <Receipt size={20} />, action: onTransactions },
-    { label: "Inventory", icon: <Package size={20} />, action: onInventory },
-    { label: "Switch", icon: <ArrowLeftRight size={20} />, action: onSwitch },
+    { label: "Orders", icon: <ClipboardList size={20} />, action: ()=>navigate("/orders-list") },
+    { label: "Transactions", icon: <Receipt size={20} />, action: ()=>navigate("/transactions") },
+    { label: "Inventory", icon: <Package size={20} />, action: ()=>navigate("/view-inventory") },
+    { label: "Switch", icon: <ArrowLeftRight size={20} />, action: ()=>navigate("/business-select") },
   ];
 
   return (
@@ -41,11 +48,11 @@ export function HomeScreen({ mode, traderId, onOrders, onTransactions, onInvento
               <p className="text-white/70 text-xs mt-0.5 font-medium">{isRetail ? "General Store" : trader?.company}</p>
             </div>
             <div className="flex-1 py-3">
-              {[{ label: "Home", icon: <Store size={17} />, action: () => setDrawer(false) }, { label: "Profile Dashboard", icon: <User size={17} />, action: () => { setDrawer(false); onProfile(); } }, { label: "Sales Report", icon: <BarChart2 size={17} />, action: () => { setDrawer(false); onSalesReport(); } }, { label: "Schemes & Offers", icon: <Tag size={17} />, action: () => setDrawer(false) }].map(item => (
+              {[{ label: "Home", icon: <Store size={17} />, action: () => setDrawer(false) }, { label: "Profile Dashboard", icon: <User size={17} />, action: () => { setDrawer(false); navigate("profile-dashboard"); } }, { label: "Sales Report", icon: <BarChart2 size={17} />, action: () => { setDrawer(false); navigate("sales-report"); } }, { label: "Schemes & Offers", icon: <Tag size={17} />, action: () => setDrawer(false) }].map(item => (
                 <button key={item.label} onClick={item.action} className="w-full flex items-center gap-4 px-5 py-3.5 text-gray-600 hover:bg-gray-50 font-semibold text-sm">{item.icon}{item.label}</button>
               ))}
             </div>
-            <button onClick={onSwitch} className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 text-red-400 text-sm font-bold"><ArrowLeftRight size={15} />Switch Business</button>
+            <button onClick={()=>navigate("business-select")} className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 text-red-400 text-sm font-bold"><ArrowLeftRight size={15} />Switch Business</button>
           </div>
         </div>
       )}

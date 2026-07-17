@@ -3,14 +3,40 @@ import { StatusBar } from "./phone-frame";
 import { Archive, ChevronDown, Store, Truck, User, Users } from "lucide-react";
 import { loadAppData } from "../loadAppData";
 import { Trader } from "../models";
+import { useAppData } from "../useAppData";
+import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../redux/store";
+import { setMode } from "../../redux/slices/modeSlice";
+import { setSelectedTrader, setTraderId } from "../../redux/slices/traderSlice";
 
-export function BusinessSelectScreen({ onWholesale, onRetail, onManageCustomers, onManageInventory }: {
-  onWholesale: (id: string) => void; onRetail: () => void;
-  onManageCustomers: () => void; onManageInventory: () => void;
-}) {
-  const [selectedTrader, setSelectedTrader] = useState("");
+export function BusinessSelectScreen() {
+
+  // const [selectedTrader, setSelectedTrader] = useState('');
+  // const [traderId,setTraderId]= useState("");
+
+  const selectedTrader = useSelector((state:RootState)=>state.trader.selectedTrader);
   const [dropdown, setDropdown] = useState(false);
-  const { traders } = loadAppData();  
+  const { traders } = useAppData();
+  const navigate = useNavigate();
+  const mode = useSelector((state:RootState)=>state.mode);
+  const dispatch:AppDispatch = useDispatch();
+
+
+  const handleOnWholesale = (trader:Trader)=>{
+    dispatch(setMode('wholesale'));
+    dispatch(setTraderId(trader.id));
+    //setTraderId(id);
+    navigate(`/home/${trader.id}`)
+  }
+
+  const handleOnRetail = ()=>{
+    dispatch(setMode('retail'));
+    dispatch(setTraderId(''));
+    navigate('/home');
+
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
@@ -36,15 +62,15 @@ export function BusinessSelectScreen({ onWholesale, onRetail, onManageCustomers,
               <div className="relative">
                 <button onClick={() => setDropdown(!dropdown)} className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm">
                   <span className={selectedTrader ? "text-gray-800 font-semibold" : "text-gray-400"}>
-                    {selectedTrader ? traders.find(t => t.id === selectedTrader)?.name : "Choose trader account..."}
+                    {selectedTrader ? traders.find(t => t.id === selectedTrader.id)?.name : "Choose trader account..."}
                   </span>
                   <ChevronDown size={15} className={`text-gray-400 transition-transform ${dropdown ? "rotate-180" : ""}`} />
                 </button>
                 {dropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-auto">
                     {traders.map(t => (
-                      <button key={`${t.name}-${t.id}`} onClick={() => { setSelectedTrader(t.id); setDropdown(false); }}
-                        className={`w-full flex flex-col items-start px-4 py-3 border-b border-gray-50 last:border-0 ${selectedTrader === t.id ? "bg-[#1B4FD8]/5" : "hover:bg-gray-50"}`}>
+                      <button key={`${t.name}-${t.id}`} onClick={() => { dispatch(setSelectedTrader(t)); setDropdown(false); }}
+                        className={`w-full flex flex-col items-start px-4 py-3 border-b border-gray-50 last:border-0 ${selectedTrader?.id === t.id ? "bg-[#1B4FD8]/5" : "hover:bg-gray-50"}`}>
                         <span className="text-sm font-bold text-gray-800">{t.name}</span>
                         <span className="text-xs text-gray-400">{t.company}</span>
                       </button>
@@ -53,12 +79,12 @@ export function BusinessSelectScreen({ onWholesale, onRetail, onManageCustomers,
                 )}
               </div>
             </div>
-            <button onClick={() => selectedTrader && onWholesale(selectedTrader)}
+            <button onClick={() => selectedTrader && handleOnWholesale(selectedTrader)}
               className={`w-full py-3 rounded-xl text-sm font-bold ${selectedTrader ? "bg-[#1B4FD8] text-white" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}
               style={selectedTrader ? { boxShadow: "0 6px 20px rgba(27,79,216,.3)" } : {}}>
               Enter Trader Account
             </button>
-            <button onClick={onManageCustomers} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-[#1B4FD8]/20 text-[#1B4FD8] text-sm font-bold">
+            <button onClick={()=>navigate("manage-customers")} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-[#1B4FD8]/20 text-[#1B4FD8] text-sm font-bold">
               <Users size={14} />Manage Customers
             </button>
           </div>
@@ -73,11 +99,11 @@ export function BusinessSelectScreen({ onWholesale, onRetail, onManageCustomers,
           </div>
           <div className="p-4">
             <p className="text-gray-400 text-sm mb-3 font-medium">All products at retail prices for direct walk-in customers.</p>
-            <button onClick={onRetail} className="w-full bg-[#F59E0B] text-white py-3 rounded-xl text-sm font-bold" style={{ boxShadow: "0 6px 20px rgba(245,158,11,.3)" }}>Enter Retail Mode</button>
+            <button onClick={handleOnRetail} className="w-full bg-[#F59E0B] text-white py-3 rounded-xl text-sm font-bold" style={{ boxShadow: "0 6px 20px rgba(245,158,11,.3)" }}>Enter Retail Mode</button>
           </div>
         </div>
         {/* Manage Inventory */}
-        <button onClick={onManageInventory} className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-100">
+        <button onClick={()=>navigate('/manage-inventory')} className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-100">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "rgba(27,79,216,.08)" }}><Archive size={20} className="text-[#1B4FD8]" /></div>
           <div className="flex-1 text-left"><p className="text-sm font-extrabold text-gray-800">Manage Inventory</p><p className="text-xs text-gray-400 font-medium">Add products, restock & view stock</p></div>
           <ChevronDown size={15} className="text-gray-300 -rotate-90" />
