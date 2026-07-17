@@ -1,17 +1,21 @@
 import { ArrowLeft, ClipboardList, CreditCard, DollarSign, FileText, Package, TrendingUp, User } from "lucide-react";
 import { StatusBar } from "./phone-frame";
+import { useNavigate } from "react-router";
 
-export function ProfileDashboardScreen({ onBack }: { onBack: () => void }) {
+export function ProfileDashboardScreen() {
   const stats = [
     { label: "Active Orders", value: "12", icon: <ClipboardList size={19} />, color: "#1B4FD8" }, { label: "Credit Limit", value: "₹5L", icon: <CreditCard size={19} />, color: "#7C3AED" },
     { label: "Total Invoiced", value: "₹24.8L", icon: <FileText size={19} />, color: "#059669" }, { label: "Weekly Sales", value: "₹3.2L", icon: <TrendingUp size={19} />, color: "#F59E0B" },
     { label: "Monthly Sales", value: "₹12.6L", icon: <DollarSign size={19} />, color: "#EF4444" }, { label: "Total Orders", value: "284", icon: <Package size={19} />, color: "#06B6D4" },
   ];
+
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <div className="bg-gradient-to-b from-[#1B4FD8] to-[#1e40af]">
         <StatusBar light />
-        <div className="flex items-center gap-3 px-4 pb-4"><button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15"><ArrowLeft size={17} className="text-white" /></button><h1 className="text-base font-extrabold text-white">Profile Dashboard</h1></div>
+        <div className="flex items-center gap-3 px-4 pb-4"><button onClick={()=>navigate("/home")} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15"><ArrowLeft size={17} className="text-white" /></button><h1 className="text-base font-extrabold text-white">Profile Dashboard</h1></div>
         <div className="flex flex-col items-center pb-6 pt-1 gap-2">
           <div className="w-16 h-16 bg-white/15 rounded-full flex items-center justify-center"><User size={30} className="text-white" /></div>
           <p className="text-white font-extrabold text-base">Rajesh Distributor</p>

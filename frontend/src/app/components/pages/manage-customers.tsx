@@ -2,26 +2,43 @@ import { useEffect, useState } from "react";
 import { Customer } from "../models";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Edit, Eye, FileText, MapPin, MoreVertical, Phone, Plus, Search, Store, Trash2, User, Users } from "lucide-react";
-import { loadAppData } from "../loadAppData";
-import { api } from "../utility";
+import { useAppData } from "../useAppData";
+import { useAddCustomer, useDeleteCustomer, useUpdateCustomer } from "../../api/customers";
+import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { setEditingCustomer, setSelectedCustomer } from "../../redux/slices/customerSlice";
+import { RootState } from "../../redux/store";
 
-export function ManageCustomersScreen({ onBack, onAdd, onView, onEdit, onDelete }: {
-   onBack: () => void; onAdd: () => void;
-  onView: (c: Customer) => void; onEdit: (c: Customer) => void; onDelete: (id: string) => void;
-}) {
-  const {customers , setCustomers} = loadAppData();
+export function ManageCustomersScreen(){
+
+  const dispatch = useDispatch();
+  const { customers } = useAppData();
+  const deleteCustomer = useDeleteCustomer();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const filtered = customers.filter(c => !search || c.customerName.toLowerCase().includes(search.toLowerCase()) || c.shopName.toLowerCase().includes(search.toLowerCase()) || c.mobile.includes(search));
 
-    async function handleDelete(id:string)
-    {
-        await api(`/customers/${id}`,
-            {method:'DELETE'});
-        setCustomers(prev => prev.filter(c=>c.id!=id));
-    }
-    
+
+  const onBack =()=>{
+    navigate('/business-select');
+  }
+
+  const onAddCustomer = ()=>{
+    dispatch(setEditingCustomer(null));
+    navigate('/add-customer');
+  }
+
+  const onEditCustomer =(customer:Customer)=>{
+    dispatch(setEditingCustomer(customer));
+    navigate(`/edit-customer/${customer.id}`);
+
+  }
+
+  const onViewCustomer = (customer:Customer)=> {
+    dispatch(setSelectedCustomer(customer));
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]" onClick={() => setOpenMenu(null)}>
@@ -33,7 +50,7 @@ export function ManageCustomersScreen({ onBack, onAdd, onView, onEdit, onDelete 
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowSearch(!showSearch)} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><Search size={15} className="text-gray-600" /></button>
-          <button onClick={onAdd} className="w-9 h-9 flex items-center justify-center rounded-full bg-[#1B4FD8]"><Plus size={15} className="text-white" /></button>
+          <button onClick={onAddCustomer} className="w-9 h-9 flex items-center justify-center rounded-full bg-[#1B4FD8]"><Plus size={15} className="text-white" /></button>
         </div>
       </div>
       {showSearch && (
@@ -57,7 +74,7 @@ export function ManageCustomersScreen({ onBack, onAdd, onView, onEdit, onDelete 
             <button onClick={e => { e.stopPropagation(); setOpenMenu(openMenu === c.id ? null : c.id); }} className="w-8 h-8 flex items-center justify-center"><MoreVertical size={15} className="text-gray-300" /></button>
             {openMenu === c.id && (
               <div className="absolute right-4 top-12 bg-white border border-gray-100 rounded-2xl shadow-2xl z-30 overflow-hidden w-40">
-                {[{ label: "View Details", icon: <Eye size={13} />, action: () => { onView(c); setOpenMenu(null); } }, { label: "Edit", icon: <Edit size={13} />, action: () => { onEdit(c); setOpenMenu(null); } }, { label: "Delete", icon: <Trash2 size={13} />, action: () => {handleDelete(c.id) ; setOpenMenu(null); }, danger: true }].map(item => (
+                {[{ label: "View Details", icon: <Eye size={13} />, action: () => { onViewCustomer(c); setOpenMenu(null); } }, { label: "Edit", icon: <Edit size={13} />, action: () => { onEditCustomer(c); setOpenMenu(null); } }, { label: "Delete", icon: <Trash2 size={13} />, action: () => {deleteCustomer.mutate(c.id) ; setOpenMenu(null); }, danger: true }].map(item => (
                   <button key={item.label} onClick={item.action} className={`w-full flex items-center gap-3 px-4 py-3 text-sm border-b border-gray-50 last:border-0 font-medium ${(item as any).danger ? "text-red-500" : "text-gray-700"}`}>{item.icon}{item.label}</button>
                 ))}
               </div>
@@ -70,8 +87,33 @@ export function ManageCustomersScreen({ onBack, onAdd, onView, onEdit, onDelete 
   );
 }
 
-export function AddEditCustomerScreen({ customer, onBack, onSave }: { customer?: Customer; onBack: () => void; onSave: (c: Omit<Customer, "id">) => void }) {
+export function AddEditCustomerScreen(){
+
+
+  const navigate = useNavigate();
+  const addCustomer = useAddCustomer();
+  const updateCustomer = useUpdateCustomer();
+  const customer = useSelector((state:RootState)=>state.customer.editingCustomer);
+
   const [form, setForm] = useState({ shopName: customer?.shopName || "", customerName: customer?.customerName || "", gst: customer?.gst || "", address: customer?.address || "", mobile: customer?.mobile || "" });
+
+
+  const onSaveNewCustomer = (payload:Omit<Customer,'id'>)=>{
+    addCustomer.mutate(form);
+    //addCustomer.mutate(payload);
+    navigate('/manage-customers');
+  }
+  const onUpdateExistingCustomer = (custId:string,payload:Customer)=>{
+
+    updateCustomer.mutate({id:custId,customer:payload});
+    navigate('/manage-customers');
+
+  }
+
+  const onBack =()=>{
+    navigate('/manage-customers');
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
@@ -86,13 +128,24 @@ export function AddEditCustomerScreen({ customer, onBack, onSave }: { customer?:
             {f.type === "textarea" ? <textarea className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4FD8]/20 resize-none" rows={3} placeholder={f.ph} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} /> : <input type={f.type} className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4FD8]/20" placeholder={f.ph} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />}
           </div>
         ))}
-        <button onClick={() => onSave(form)} className="w-full bg-[#1B4FD8] text-white rounded-2xl py-3.5 font-bold text-sm mt-1" style={{ boxShadow: "0 8px 24px rgba(27,79,216,.3)" }}>{customer ? "Save Changes" : "Add Customer"}</button>
+        <button onClick={() => {
+          const payload:Omit<Customer,'id'> = form;
+          customer ? onUpdateExistingCustomer(customer.id,customer) : onSaveNewCustomer(payload) } } className="w-full bg-[#1B4FD8] text-white rounded-2xl py-3.5 font-bold text-sm mt-1" style={{ boxShadow: "0 8px 24px rgba(27,79,216,.3)" }}>{customer ? "Save Changes" : "Add Customer"}</button>
       </div>
     </div>
   );
 }
 
-export function ViewCustomerScreen({ customer, onBack }: { customer: Customer; onBack: () => void }) {
+export function ViewCustomerScreen() {
+
+    const navigate = useNavigate();
+    const customer = useSelector((state:RootState)=>state.customer.selectedCustomer);
+
+    const onBack = ()=>
+    {
+      navigate('/manage-customers');
+    }
+
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <StatusBar />
@@ -102,11 +155,11 @@ export function ViewCustomerScreen({ customer, onBack }: { customer: Customer; o
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3" style={{ scrollbarWidth: "none" }}>
         <div className="flex flex-col items-center py-6 gap-2">
-          <div className="w-20 h-20 bg-[#1B4FD8] rounded-full flex items-center justify-center" style={{ boxShadow: "0 12px 32px rgba(27,79,216,.3)" }}><span className="text-white text-3xl font-extrabold">{customer.customerName.charAt(0)}</span></div>
-          <h2 className="text-base font-extrabold text-gray-800">{customer.shopName}</h2>
-          <p className="text-gray-400 text-sm font-medium">{customer.customerName}</p>
+          <div className="w-20 h-20 bg-[#1B4FD8] rounded-full flex items-center justify-center" style={{ boxShadow: "0 12px 32px rgba(27,79,216,.3)" }}><span className="text-white text-3xl font-extrabold">{customer?.customerName.charAt(0)}</span></div>
+          <h2 className="text-base font-extrabold text-gray-800">{customer?.shopName}</h2>
+          <p className="text-gray-400 text-sm font-medium">{customer?.customerName}</p>
         </div>
-        {[{ label: "Shop Name", value: customer.shopName, icon: <Store size={14} className="text-[#1B4FD8]" /> }, { label: "Customer Name", value: customer.customerName, icon: <User size={14} className="text-[#1B4FD8]" /> }, { label: "GST Number", value: customer.gst, icon: <FileText size={14} className="text-[#1B4FD8]" /> }, { label: "Mobile", value: customer.mobile, icon: <Phone size={14} className="text-[#1B4FD8]" /> }, { label: "Address", value: customer.address, icon: <MapPin size={14} className="text-[#1B4FD8]" /> }].map(f => (
+        {[{ label: "Shop Name", value: customer?.shopName, icon: <Store size={14} className="text-[#1B4FD8]" /> }, { label: "Customer Name", value: customer?.customerName, icon: <User size={14} className="text-[#1B4FD8]" /> }, { label: "GST Number", value: customer?.gst, icon: <FileText size={14} className="text-[#1B4FD8]" /> }, { label: "Mobile", value: customer?.mobile, icon: <Phone size={14} className="text-[#1B4FD8]" /> }, { label: "Address", value: customer?.address, icon: <MapPin size={14} className="text-[#1B4FD8]" /> }].map(f => (
           <div key={f.label} className="bg-white rounded-2xl p-4 flex items-start gap-3 shadow-sm">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center mt-0.5 flex-shrink-0" style={{ background: "rgba(27,79,216,.08)" }}>{f.icon}</div>
             <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">{f.label}</p><p className="text-sm font-bold text-gray-800">{f.value}</p></div>

@@ -3,15 +3,17 @@ import { StatusBar } from "./phone-frame";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CATEGORY_DATA, PIE_COLORS, SALES_DATA } from "../mock-data";
 import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router";
 
-export function SalesReportScreen({ onBack }: { onBack: () => void }) {
+export function SalesReportScreen() {
   const [period, setPeriod] = useState<"weekly" | "monthly">("monthly");
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col h-full bg-[#F0F4FF]">
       <div className="bg-gradient-to-b from-[#1B4FD8] to-[#1e40af]">
         <StatusBar light />
         <div className="flex items-center justify-between px-4 pb-3">
-          <div className="flex items-center gap-3"><button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15"><ArrowLeft size={17} className="text-white" /></button><h1 className="text-base font-extrabold text-white">Sales Report</h1></div>
+          <div className="flex items-center gap-3"><button onClick={()=>navigate("home")} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15"><ArrowLeft size={17} className="text-white" /></button><h1 className="text-base font-extrabold text-white">Sales Report</h1></div>
           <div className="flex gap-1 bg-white/10 p-1 rounded-xl">
             {(["weekly", "monthly"] as const).map(p => (<button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1 rounded-lg text-xs font-bold capitalize ${period === p ? "bg-white text-[#1B4FD8]" : "text-white/70"}`}>{p}</button>))}
           </div>

@@ -4,12 +4,22 @@ import { AppMode } from "../types";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Minus, Package, Plus, Search, ShoppingCart, X } from "lucide-react";
 import { fmt } from "../utility";
+import { useAppData } from "../useAppData";
+import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
+import { setCart, setCartCustomerId } from "../../redux/slices/cartSlice";
 
-export function AddOrderScreen({ customers, cart, products, mode, traderId, onBack, onUpdateCart, onViewCart }: {
-  customers: Customer[]; cart: CartItem[]; products: Product[];
-  mode: AppMode; traderId: string;
-  onBack: () => void; onUpdateCart: (items: CartItem[]) => void; onViewCart: (cid: string) => void;
-}) {
+export function AddOrderScreen()
+{
+
+  const {products,customers} = useAppData();
+  const navigate = useNavigate();
+  const mode = useSelector((state:RootState)=>state.mode);
+  const cart = useSelector((state:RootState)=>state.cart.items);
+  const traderId = useSelector((state:RootState)=>state.trader.traderId);
+  const dispatch = useDispatch();
+
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [custSearch, setCustSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
@@ -23,7 +33,14 @@ export function AddOrderScreen({ customers, cart, products, mode, traderId, onBa
   function updateQty(product: Product, delta: number) {
     setLocalCart(prev => { const ex = prev.find(i => i.product.id === product.id); if (!ex && delta > 0) return [...prev, { product, quantity: delta, price: product.mrp }]; return prev.map(i => i.product.id === product.id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0); });
   }
-  function handleViewCart() { if (!selectedCustomer) return; onUpdateCart(localCart); onViewCart(selectedCustomer.id); }
+  function handleViewCart() {
+    if (!selectedCustomer) return;
+    dispatch(setCart(localCart));
+    //onUpdateCart(localCart);
+    dispatch(setCartCustomerId(selectedCustomer.id));
+    navigate('/cart');
+    // onViewCart(selectedCustomer.id);
+  }
   const totalItems = localCart.reduce((s, i) => s + i.quantity, 0);
   const totalVal = localCart.reduce((s, i) => s + i.quantity * i.price, 0);
 
@@ -32,7 +49,7 @@ export function AddOrderScreen({ customers, cart, products, mode, traderId, onBa
       <StatusBar />
       <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
+          <button onClick={()=>navigate('/orders-list')} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50"><ArrowLeft size={17} className="text-gray-700" /></button>
           <h1 className="text-base font-extrabold text-gray-800">New Order</h1>
         </div>
         <button onClick={handleViewCart} disabled={localCart.length === 0} className="relative">

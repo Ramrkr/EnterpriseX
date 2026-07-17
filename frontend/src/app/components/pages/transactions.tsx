@@ -5,12 +5,22 @@ import { ArrowLeft, Banknote, BookCheck, CheckCircle, CreditCard, FileText, Rece
 import { fmt } from "../utility";
 import { StatusBar } from "./phone-frame";
 import { PaymentBadge } from "../badges";
+import { useAppData } from "../useAppData";
+import { useUpdatePayment } from "../../api/payments";
+import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 
-export function TransactionsScreen({ orders, payments, mode, traderId, onBack, onUpdatePayment }: {
-  orders: Order[]; payments: Record<string, PaymentRecord>;
-  mode: AppMode; traderId: string; onBack: () => void;
-  onUpdatePayment: (orderId: string, rec: PaymentRecord) => void;
-}) {
+export function TransactionsScreen() {
+
+    const { orders,payments } = useAppData();
+    const navigate = useNavigate();
+
+    const mode = useSelector((state:RootState)=>state.mode);
+    const traderId = useSelector((state:RootState)=>state.trader.traderId);
+
+    const updatePayments = useUpdatePayment();
+
   const [modal, setModal] = useState<PaymentModalState | null>(null);
   const [search, setSearch] = useState("");
 
@@ -30,9 +40,23 @@ export function TransactionsScreen({ orders, payments, mode, traderId, onBack, o
   function confirmPayment() {
     if (!modal) return;
     const { orderId, total, step, method, amountPaid } = modal;
-    if (step === "paid-method" && method) { onUpdatePayment(orderId, { status: "paid", paymentMethod: method, amountPaid: total }); setModal(null); }
-    else if (step === "partial-amount" && amountPaid) { onUpdatePayment(orderId, { status: "partial", amountPaid: Number(amountPaid) }); setModal(null); }
-    else if (step === "credit-done") { onUpdatePayment(orderId, { status: "unpaid", amountPaid: 0, isCredit: true }); setModal(null); }
+    if (step === "paid-method" && method) {
+        updatePayments.mutate({id:orderId,paymentRecord:{ status: "paid", paymentMethod: method, amountPaid: total }});
+        //onUpdatePayment(orderId, { status: "paid", paymentMethod: method, amountPaid: total });
+        setModal(null); 
+    }
+    else if (step === "partial-amount" && amountPaid) {
+        updatePayments.mutate({id:orderId,paymentRecord:{ status: "partial", amountPaid: Number(amountPaid) }});
+        //onUpdatePayment(orderId, { status: "partial", amountPaid: Number(amountPaid) });
+        setModal(null); }
+    else if (step === "credit-done") {
+        updatePayments.mutate({id:orderId,paymentRecord:{ status: "unpaid", amountPaid: 0, isCredit: true }});
+        //onUpdatePayment(orderId, { status: "unpaid", amountPaid: 0, isCredit: true });
+        setModal(null); }
+  }
+
+  const onBack =()=>{
+    navigate('/home');
   }
 
   return (
